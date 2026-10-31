@@ -52,3 +52,7 @@ Le projet est réalisé dans une machine virtuelle Ubuntu exécutée sous VMware
 ## 6. Auteur
 
 Projet réalisé dans le cadre du Master 2 DevOps.
+
+## 7. Cycle Git
+
+Première mise à jour du projet : test du cycle modification, commit et push
