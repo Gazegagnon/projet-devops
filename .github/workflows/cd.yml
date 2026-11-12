@@ -1,0 +1,81 @@
+
+name: CD - Deploiement continu
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+
+  build-and-push:
+    name: Construction et publication GHCR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperation du code
+        uses: actions/checkout@v4
+
+      - name: Connexion a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construction et publication
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/gazegagnon/projet-devops:${{ github.sha }}
+            ghcr.io/gazegagnon/projet-devops:latest
+
+  deploy:
+    name: Deploiement sur Ubuntu
+    needs: build-and-push
+    runs-on: self-hosted
+
+    steps:
+      - name: Connexion a GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          GHCR_USER: ${{ secrets.GHCR_USERNAME }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io \
+            -u "$GHCR_USER" \
+            --password-stdin
+
+      - name: Telechargement de la nouvelle image
+        run: |
+          docker pull ghcr.io/gazegagnon/projet-devops:${{ github.sha }}
+
+      - name: Arret de l'ancien conteneur
+        run: |
+          docker stop projet-devops || true
+          docker rm projet-devops || true
+
+      - name: Demarrage de la nouvelle version
+        run: |
+          docker run -d \
+            --name projet-devops \
+            -p 8080:5000 \
+            --restart unless-stopped \
+            ghcr.io/gazegagnon/projet-devops:${{ github.sha }}
+
+      - name: Verification de l'application
+        run: |
+          for i in $(seq 1 12); do
+            if curl --fail http://localhost:8080/health; then
+              echo "Deploiement reussi"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Echec de verification de l'application"
+          exit 1
