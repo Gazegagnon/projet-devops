@@ -44,7 +44,7 @@ jobs:
     steps:
       - name: Connexion a GHCR
         env:
-          GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GHCR_WRITE_TOKEN }}
           GHCR_USER: ${{ secrets.GHCR_USERNAME }}
         run: |
           echo "$GHCR_TOKEN" | docker login ghcr.io \
