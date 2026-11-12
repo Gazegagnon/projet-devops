@@ -15,7 +15,7 @@ def health():
 
 @app.get("/version")
 def version():
-    return "Version 1.0"
+    return "Version 2.0"
 
 
 if __name__ == "__main__":
